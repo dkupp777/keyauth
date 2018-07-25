@@ -1,0 +1,37 @@
+---
+- hosts: "{{ target }}"
+  become: sudo
+  gather_facts: no
+  tasks:
+  - include_vars: secrets.yml
+  - name: create svc_devops group
+    group:
+      name: svc_devops
+      state: present
+  - name: create svc_devops account
+    user:
+      name: svc_devops
+      group: svc_devops
+  - name: set svc_devops home dir ownership
+    file:
+      path: "/home/svc_devops"
+      state: directory
+      owner: svc_devops
+      group: svc_devops
+      recurse: yes
+  - name: add authorized_key file"
+    authorized_key:
+      user: svc_devops
+      state: present
+      manage_dir: yes
+      key: "{{ lookup('file', '/tmp/pub.pub') }}"
+  - name: remove pub.pub
+    file: path=/tmp/pub.pub
+      state=absent
+  - name: install rsync and dmidecode packages
+    yum: pkg={{ item }} state=installed
+    with_items:
+    - rsync
+    - dmidecode
+  #- name: Include start script
+  #  include: sudoers/main.yml
